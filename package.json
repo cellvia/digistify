@@ -1,0 +1,36 @@
+{
+  "name": "digistify",
+  "version": "0.0.1",
+  "description": "Pull all gists, optionally filtered",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/cellvia/digistify"
+  },
+  "keywords": [
+    "gist",
+    "github"
+  ],
+  "author": "Brandon Selway",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cellvia/digistify/issues"
+  },
+  "testling": {
+    "files": "test.js"
+  },
+  "scripts": {
+    "test": "tape test.js"
+  },
+  "browser": {
+    "request": "browser-request"
+  },
+  "homepage": "https://github.com/cellvia/digistify",
+  "dependencies": {
+    "browser-request": "~0.3.1",
+    "request": "~2.34.0"
+  },
+  "devDependencies": {
+    "tape": "~2.10.2"
+  }
+}
