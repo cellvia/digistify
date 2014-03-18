@@ -1,37 +1,57 @@
 var request = require('request');
 
 var exportObj = {
+	defaults: {},
+	setDefault: function(prop, val){
+		if(typeof prop === "object")
+			merge(exportObj.defaults, prop);
+		else
+			exportObj.defaults[prop] = val;		
+	},
 	getGists: function (user, options, cb){
+		if(!isNaN(user)) return exportObj.getContent.apply(exportObj, arguments);
 		if(typeof options === "function"){
 			cb = options;
 			options = {};
 		};
-		exportObj.options = options;
+		options = merge(options, exportObj.defaults);
 		var gists = [];
 		var counter = 0;
 		var limit = options.limit || 0;
 		var offset = options.offset || 0;
 		var identifier = options.identifier || "";
+		var transform;
 
-		var opts = {json: true};
-		if(!process.browser) opts.headers = { 'User-Agent': options.userAgent || 'node.js' };
+		switch(options.transform){
+			case "article":
+				transform = function(gist){
+					return { id: +gist.id,
+							 title: gist.description.replace(identifier, ""),
+							 created: gist.created_at,
+							 modified: gist.updated_at }
+				}
+			break;
+			default:
+				transform = typeof options.transform === "function" ? options.transform : false;
+			break;
+		}
+
+		var opts = {json: true, headers: {} };
+		if(typeof options.headers === "object") merge(opts.headers, options.headers);
+		if(typeof exportObj.defaults.headers === "object") merge(opts.headers, exportObj.defaults.headers);
+		if(!process.browser && !opts.headers['User-Agent']) opts.headers['User-Agent'] = options.userAgent || 'node.js';
 
 		function finalize(){
 			if(offset || limit) gists = gists.slice(offset, limit);
-			gists = gists.map(function(gist){
-				return { id: +gist.id,
-						 title: gist.description.replace(identifier, ""),
-						 created: gist.created_at,
-						 modified: gist.updated_at }
-			});
+			if( transform ) gists = gists.map(transform);
 			cb(null, gists);
 		}
 
-		function recurs(){	
+		function recurs(){
 			opts.url = get_gists_url(user, {per_page: 100, page: ++counter});
 			request( opts, function(err, resp, newgists){
 				if(err) return cb(err);
-				if(resp.statusCode != 200) return cb(new Error("invalid url: "+ url));
+				if(resp.statusCode != 200) return cb(new Error("invalid url: "+ opts.url));
 				if(typeof newgists !== "object" || typeof newgists.length === "undefined" || newgists.message) return cb(new Error("error: "+ newgists));
 				if(!newgists.length) return finalize();
 
@@ -55,7 +75,7 @@ var exportObj = {
 				});
 
 				gists = gists.concat(newgists);
-				if(limit && gists.length == limit) return finalize();
+				if(newgists.length < 100 || limit && limit <= gists.length) return finalize();
 
 				recurs();
 
@@ -67,19 +87,36 @@ var exportObj = {
 	getContent: function(id, options, cb){
 		if(typeof options === "function"){
 			cb = options;
-			options = false;
+			options = {};
 		};
-		options = options || exportObj.options;
+		merge(options, exportObj.defaults);
 		var contents = [];
-		var opts = {url: get_gist_url(id), json: true};
-		if(!process.browser) opts.headers = { 'User-Agent': options.userAgent || 'node.js' };
+		var transform;
+
+		switch(options.contentTransform){
+			case "article":
+				transform = function(file){
+					return file.content
+				}
+			break;
+			default:
+				transform = typeof options.contentTransform === "function" ? options.contentTransform : false;
+			break;
+		}
+
+		var opts = {json: true, headers: {}, url: get_gist_url(id) };
+		if(typeof options.headers === "object") merge(opts.headers, options.headers);
+		if(typeof exportObj.defaults.headers === "object") merge(opts.headers, exportObj.defaults.headers);
+		if(!process.browser && !opts.headers['User-Agent']) opts.headers['User-Agent'] = options.userAgent || 'node.js';
+
 		request( opts, function(err, resp, gist){
 			if(err) return cb(err);
-			if(resp.statusCode != 200) return cb(new Error("invalid url? "+ url));
+			if(resp.statusCode != 200) return cb(new Error("invalid url? "+ opts.url));
 			for(var file in gist.files){
 				if(options.language && gist.files[file].language.toLowerCase() !== options.language.toLowerCase()) continue
-				contents.push(gist.files[file].content);
+				contents.push(gist.files[file]);
 			}
+			if(transform) contents = contents.map(transform);
 			if(contents.length === 1){
 				cb(null, contents[0]);
 			}else{
@@ -91,7 +128,7 @@ var exportObj = {
 
 function get_gists_url(user, options){ return "https://api.github.com/users/"+user+"/gists?per_page="+options.per_page+"&page="+options.page; };
 function get_gist_url(id){ return "https://api.github.com/gists/"+id; };
+function merge(a, b){ a = a || {}; for (var x in b){ if(typeof a[x] !== "undefined") continue; a[x] = b[x]; } return a; };
 
 module.exports = exportObj.getGists;
-module.exports.getGists = exportObj.getGists;
-module.exports.getContent = exportObj.getContent;
+module.exports.setDefault = exportObj.setDefault;

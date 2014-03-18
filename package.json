@@ -1,6 +1,6 @@
 {
   "name": "digistify",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Pull all gists, optionally filtered",
   "main": "index.js",
   "repository": {
