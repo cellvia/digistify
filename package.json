@@ -1,6 +1,6 @@
 {
   "name": "digistify",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Pull all gists, optionally filtered",
   "main": "index.js",
   "repository": {
@@ -11,7 +11,9 @@
     "gist",
     "github"
   ],
-  "author": "Brandon Selway",
+  "author": {
+    "name": "Brandon Selway"
+  },
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/cellvia/digistify/issues"
