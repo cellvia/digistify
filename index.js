@@ -9,7 +9,6 @@ var exportObj = {
 			exportObj.defaults[prop] = val;		
 	},
 	getGists: function (user, options, cb){
-		if(!isNaN(user)) return exportObj.getFiles.apply(exportObj, arguments);
 		if(typeof options === "function"){
 			cb = options;
 			options = {};
@@ -141,4 +140,5 @@ function get_gist_url(id){ return "https://api.github.com/gists/"+id; };
 function merge(a, b){ a = a || {}; for (var x in b){ if(typeof a[x] !== "undefined") continue; a[x] = b[x]; } return a; };
 
 module.exports = exportObj.getGists;
+module.exports.getFiles = exportObj.getFiles;
 module.exports.setDefault = exportObj.setDefault;
